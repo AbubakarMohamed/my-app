@@ -18,7 +18,7 @@ class UserController extends Controller
         ]);
     }
 
-    // Add new user (for React Inertia POST)
+    // Add new user (Inertia-friendly)
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -33,8 +33,17 @@ class UserController extends Controller
             'password' => bcrypt($validated['password']),
         ]);
 
-        // Return newly created user as JSON for instant frontend update
-        return response()->json(['newUser' => $user]);
+        // If the request is an Inertia request, return the updated Inertia page
+        if ($request->header('X-Inertia')) {
+            $users = User::select('id', 'name', 'email', 'created_at')->get();
+            return Inertia::render('Users/Index', [
+                'users' => $users,
+            ])->with('success', 'User added successfully.');
+        }
+
+        // Otherwise, normal redirect
+        return redirect()->route('users.index')
+                         ->with('success', 'User added successfully.');
     }
 
     // Update existing user
