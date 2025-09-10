@@ -11,14 +11,14 @@ class UserController extends Controller
     // List all users
     public function index()
     {
-        $users = User::select('id', 'name', 'email', 'created_at')->get();
+        $users = User::select('id', 'name', 'email', 'created_at')->latest()->get();
 
         return Inertia::render('Users/Index', [
             'users' => $users,
         ]);
     }
 
-    // Add new user (Inertia-friendly)
+    // Store new user
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -27,40 +27,41 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:6'],
         ]);
 
-        $user = User::create([
+        User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => bcrypt($validated['password']),
         ]);
 
-        // If the request is an Inertia request, return the updated Inertia page
-        if ($request->header('X-Inertia')) {
-            $users = User::select('id', 'name', 'email', 'created_at')->get();
-            return Inertia::render('Users/Index', [
-                'users' => $users,
-            ])->with('success', 'User added successfully.');
-        }
-
-        // Otherwise, normal redirect
         return redirect()->route('users.index')
-                         ->with('success', 'User added successfully.');
+            ->with('success', 'User added successfully.');
     }
 
     // Update existing user
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            'name'  => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $user->update($validated);
+        $data = [
+            'name'  => $validated['name'],
+            'email' => $validated['email'],
+        ];
+
+        if (!empty($validated['password'])) {
+            $data['password'] = bcrypt($validated['password']);
+        }
+
+        $user->update($data);
 
         return redirect()->route('users.index')
             ->with('success', 'User updated successfully.');
     }
 
-    // Optional: delete user
+    // Delete user
     public function destroy(User $user)
     {
         $user->delete();
