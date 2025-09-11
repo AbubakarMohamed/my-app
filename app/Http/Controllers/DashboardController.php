@@ -23,7 +23,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'gender' => ucfirst($item->gender),
+                    'gender' => ucfirst($item->gender ?? 'Unknown'),
                     'value'  => $item->value,
                 ];
             });
@@ -34,7 +34,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'role'  => ucfirst($item->role),
+                    'role'  => ucfirst($item->role ?? 'Unknown'),
                     'value' => $item->value,
                 ];
             });

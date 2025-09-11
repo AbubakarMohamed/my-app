@@ -76,39 +76,55 @@ const { x, y, reference, floating, strategy } = useFloating({
 });  
 
 
-  // ===== Edit User =====
-  const handleEditClick = (user) => {
-    setSelectedUser(user);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      password: "",
-      role: user.role,
-      status: user.status,
-      gender: user.gender,
-    });
-    setIsEditDialogOpen(true);
+// ===== Edit User =====
+const handleEditClick = (user) => {
+  setSelectedUser(user);
+  setFormData({
+    name: user.name,
+    email: user.email,
+    password: "", // always empty until changed
+    role: user.role ?? "",
+    status: user.status ?? "",
+    gender: user.gender ?? "",
+  });
+  setIsEditDialogOpen(true);
+};
+
+const handleEditSubmit = (e) => {
+  e.preventDefault();
+  setSaveStatus("loading");
+
+  // Prepare payload to match backend rules
+  const payload = {
+    name: formData.name,
+    email: formData.email,
+    role: formData.role || null,
+    status: formData.status || null,
+    gender: formData.gender || null,
   };
 
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    setSaveStatus("loading");
+  if (formData.password && formData.password.trim() !== "") {
+    payload.password = formData.password;
+  }
 
-    router.patch(route("users.update", selectedUser.id), formData, {
-      onSuccess: (page) => {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === selectedUser.id ? { ...u, ...formData } : u))
-        );
-        toast.success("User updated successfully ✅");
-        setIsEditDialogOpen(false);
-        setSaveStatus("idle");
-      },
-      onError: () => {
-        toast.error("Failed to update user ❌");
-        setSaveStatus("idle");
-      },
-    });
-  };
+  router.patch(route("users.update", selectedUser.id), payload, {
+    onSuccess: () => {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === selectedUser.id ? { ...u, ...payload, id: selectedUser.id } : u
+        )
+      );
+      toast.success("User updated successfully ✅");
+      setIsEditDialogOpen(false);
+      setSaveStatus("idle");
+    },
+    onError: () => {
+      toast.error("Failed to update user ❌");
+      setSaveStatus("idle");
+    },
+  });
+};
+
 
   // ===== Delete User =====
   const handleDelete = (user) => {

@@ -30,15 +30,15 @@ class UserController extends Controller
             ->groupBy('status')
             ->pluck('count', 'status');
 
-        $departmentStats = User::select('department', DB::raw('COUNT(*) as count'))
-            ->groupBy('department')
-            ->pluck('count', 'department');
+        $genderStats = User::select('gender', DB::raw('COUNT(*) as count'))
+            ->groupBy('gender')
+            ->pluck('count', 'gender');
 
         return Inertia::render('Users/Index', [
             'users'           => $users,
             'roleStats'       => $roleStats,
             'statusStats'     => $statusStats,
-            'departmentStats' => $departmentStats,
+            'genderStats' => $genderStats,
         ]);
     }
 
@@ -49,9 +49,9 @@ class UserController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
-            'role'     => ['nullable', 'string'],
-            'status'   => ['nullable', 'string'],
-            'gender' => ['nullable', 'string'],
+            'role'     => ['nullable', 'string', 'max:50'],
+            'status'   => ['nullable', 'string', 'max:50'],
+            'gender'   => ['nullable', 'string', 'max:20'],
         ]);
 
         User::create([
@@ -60,7 +60,7 @@ class UserController extends Controller
             'password'   => bcrypt($validated['password']),
             'role'       => $validated['role'] ?? 'user',
             'status'     => $validated['status'] ?? 'active',
-            'gender'     => $validated['gender'] ?? 'male',
+            'gender'     => $validated['gender'] ?? 'unspecified',
         ]);
 
         return redirect()->route('users.index')
@@ -74,20 +74,20 @@ class UserController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:6'],
-            'role'     => ['nullable', 'string'],
-            'status'   => ['nullable', 'string'],
-            'gender' => ['nullable', 'string'],
+            'role'     => ['nullable', 'string', 'max:50'],
+            'status'   => ['nullable', 'string', 'max:50'],
+            'gender'   => ['nullable', 'string', 'max:20'],
         ]);
 
         $data = [
             'name'       => $validated['name'],
             'email'      => $validated['email'],
-            'role'       => $validated['role'] ?? $user->role,
-            'status'     => $validated['status'] ?? $user->status,
-            'gender' => $validated['gender'] ?? $user->gender,
+            'role'       => $request->filled('role') ? $validated['role'] : $user->role,
+            'status'     => $request->filled('status') ? $validated['status'] : $user->status,
+            'gender'     => $request->filled('gender') ? $validated['gender'] : $user->gender,
         ];
 
-        if (!empty($validated['password'])) {
+        if ($request->filled('password')) {
             $data['password'] = bcrypt($validated['password']);
         }
 
