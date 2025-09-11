@@ -16,6 +16,17 @@ import { Toaster, toast } from "sonner";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { Button } from "@/Components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectTrigger,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectValue
+ } from "@/Components/ui/select";
 
 export default function UsersIndex({ auth, users: initialUsers, errors }) {
   const [users, setUsers] = useState(initialUsers);
@@ -167,7 +178,7 @@ const handleEditSubmit = (e) => {
           <Menu.Items className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-50">
             <Menu.Item>
               {({ active }) => (
-                <button
+                <Button
                   onClick={() => {
                     setSelectedUser(row.original);
                     setIsViewDialogOpen(true);
@@ -175,7 +186,7 @@ const handleEditSubmit = (e) => {
                   className={`${active ? "bg-gray-100" : ""} block w-full text-left px-4 py-2 text-sm`}
                 >
                   View
-                </button>
+                </Button>
               )}
             </Menu.Item>
             <Menu.Item>
@@ -467,24 +478,24 @@ const handleEditSubmit = (e) => {
                 className="w-full sm:w-1/2 border border-gray-300 rounded-md px-4 py-2 focus:ring focus:ring-indigo-200"
               />
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => setIsAddDialogOpen(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="px-4 py-2 "
                 >
                   Add User
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={exportExcel}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  className="px-4 py-2  bg-blue-500 hover:bg-blue-900 text-white "
                 >
                   Export Excel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={exportPDF}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  className="px-4 py-2  text-white"
                 >
                   Export PDF
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -534,17 +545,37 @@ const handleEditSubmit = (e) => {
                 <span>
                   Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                 </span>
-                <select
-                  value={table.getState().pagination.pageSize}
-                  onChange={(e) => table.setPageSize(Number(e.target.value))}
-                  className="ml-2 border rounded px-2 py-1"
-                >
-                  {[10, 15, 20, 25, 30].map((pageSize) => (
-                    <option key={pageSize} value={pageSize}>
-                      Show {pageSize}
-                    </option>
-                  ))}
-                </select>
+                <Select
+  value={String(table.getState().pagination.pageSize)}
+  onValueChange={(value) => table.setPageSize(Number(value))}
+>
+  {/* Trigger button */}
+  <SelectTrigger className="ml-2 w-auto min-w-[120px] px-3 py-2 border rounded-lg shadow-sm bg-white hover:bg-gray-50 transition">
+    <SelectValue placeholder="Rows per page" />
+  </SelectTrigger>
+
+  {/* Dropdown content */}
+  <SelectContent className="rounded-xl shadow-md">
+    <SelectGroup>
+      <SelectLabel className="px-2 py-1 text-gray-500 text-sm">
+        Rows per page
+      </SelectLabel>
+      {[10, 15, 20, 25, 30].map((pageSize) => (
+        <SelectItem
+          key={pageSize}
+          value={String(pageSize)}
+          className="cursor-pointer rounded-md px-3 py-2 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+        >
+          Show {pageSize}
+        </SelectItem>
+      ))}
+      <SelectSeparator className="my-1" />
+      <div className="px-3 py-1 text-xs text-gray-400 italic">
+        Choose how many rows you see
+      </div>
+    </SelectGroup>
+  </SelectContent>
+</Select>
               </div>
               <div className="flex gap-2">
                 <button

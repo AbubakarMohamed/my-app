@@ -5,13 +5,14 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react'; // 👈 added router
+import AuthService from '@/Services/AuthService';
 
 export default function Login({ status, canResetPassword }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, processing, errors, reset } = useForm({
         email: '',
         password: '',
-        remember: '',
+        remember: false,
     });
 
     useEffect(() => {
@@ -21,20 +22,35 @@ export default function Login({ status, canResetPassword }) {
     }, []);
 
     const handleOnChange = (event) => {
-        setData(event.target.name, event.target.type === 'checkbox' ? event.target.checked : event.target.value);
+        setData(
+            event.target.name,
+            event.target.type === 'checkbox'
+                ? event.target.checked
+                : event.target.value
+        );
     };
 
-    const submit = (e) => {
+    const submit = async (e) => {
         e.preventDefault();
 
-        post(route('login'));
+        try {
+            await AuthService.login(data); 
+            // 👇 redirect with Inertia after successful login
+            router.visit(route('dashboard')); 
+        } catch (error) {
+            console.error(error.response?.data || error.message);
+        }
     };
 
     return (
         <GuestLayout>
             <Head title="Log in" />
 
-            {status && <div className="mb-4 font-medium text-sm text-green-600">{status}</div>}
+            {status && (
+                <div className="mb-4 font-medium text-sm text-green-600">
+                    {status}
+                </div>
+            )}
 
             <form onSubmit={submit}>
                 <div>
@@ -72,8 +88,14 @@ export default function Login({ status, canResetPassword }) {
 
                 <div className="block mt-4">
                     <label className="flex items-center">
-                        <Checkbox name="remember" value={data.remember} onChange={handleOnChange} />
-                        <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                        <Checkbox
+                            name="remember"
+                            checked={data.remember}
+                            onChange={handleOnChange}
+                        />
+                        <span className="ml-2 text-sm text-gray-600">
+                            Remember me
+                        </span>
                     </label>
                 </div>
 
