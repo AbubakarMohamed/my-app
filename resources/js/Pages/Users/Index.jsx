@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+import { FunnelIcon } from "@heroicons/react/24/outline"
+import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -23,6 +25,12 @@ export default function UsersIndex({ auth, users: initialUsers, errors }) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
 
   const [formData, setFormData] = useState({
     name: "",
@@ -58,6 +66,15 @@ export default function UsersIndex({ auth, users: initialUsers, errors }) {
       },
     });
   };
+
+
+  // Inside your component
+const { x, y, reference, floating, strategy } = useFloating({
+  placement: "bottom-start",   // default placement
+  middleware: [offset(4), flip(), shift({ padding: 8 })],
+  whileElementsMounted: autoUpdate,
+});  
+
 
   // ===== Edit User =====
   const handleEditClick = (user) => {
@@ -171,15 +188,27 @@ export default function UsersIndex({ auth, users: initialUsers, errors }) {
     }),
   ];
 
-  // ===== Filter users =====
   const filteredUsers = useMemo(() => {
-    if (!searchQuery) return users;
-    return users.filter(
-      (user) =>
+    return users.filter((user) => {
+      // Search query filter
+      const matchesSearchQuery =
+        !searchQuery ||
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery, users]);
+        user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  
+      // Role filter
+      const matchesRole = roleFilter ? user.role === roleFilter : true;
+  
+      // Status filter
+      const matchesStatus = statusFilter ? user.status === statusFilter : true;
+  
+      // Gender filter
+      const matchesGender = genderFilter ? user.gender === genderFilter : true;
+  
+      return matchesSearchQuery && matchesRole && matchesStatus && matchesGender;
+    });
+  }, [searchQuery, roleFilter, statusFilter, genderFilter, users]);
+  
 
   // ===== Pagination =====
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -261,6 +290,8 @@ export default function UsersIndex({ auth, users: initialUsers, errors }) {
     doc.save(`users_${now.getTime()}.pdf`);
   };
 
+  
+
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -273,6 +304,142 @@ export default function UsersIndex({ auth, users: initialUsers, errors }) {
       <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+
+
+{/* Filter Bar */}
+<div className="mb-6 flex flex-col md:flex-row md:items-center md:gap-4 relative">
+  {/* Filter Button */}
+  <button
+    ref={reference}
+    onClick={() => setShowFilters(!showFilters)}
+    className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition-colors duration-200 mb-2 md:mb-0"
+    title="Filter Users"
+  >
+    <FunnelIcon className="w-5 h-5" />
+  </button>
+
+  {/* Main Dropdown */}
+  {showFilters && (
+    <div
+      ref={floating}
+      style={{
+        position: strategy,
+        top: y ?? 0,
+        left: x ?? 0,
+        minWidth: "200px",
+        zIndex: 50,
+      }}
+      className="bg-white border border-gray-200 rounded-lg shadow-lg"
+    >
+      {["Role", "Status", "Gender"].map((filter) => (
+        <div key={filter} className="relative group">
+          <button
+            onClick={() =>
+              setActiveFilter(activeFilter === filter ? "" : filter)
+            }
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex justify-between items-center"
+          >
+            {filter}
+            <span className="ml-2">{activeFilter === filter ? "▲" : "▶"}</span>
+          </button>
+
+          {/* Side Dropdown */}
+          {activeFilter === filter && (
+            <div className="absolute top-0 left-full ml-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[180px]">
+              {filter === "Role" &&
+                ["Admin", "User", "Manager"].map((role) => (
+                  <label
+                    key={role}
+                    className="flex items-center gap-2 mb-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="roleFilter"
+                      value={role.toLowerCase()}
+                      checked={roleFilter === role.toLowerCase()}
+                      onChange={(e) => {
+                        setRoleFilter(e.target.value);
+                        setActiveFilter(""); // collapse submenu only
+                      }}
+                      className="form-radio text-blue-600"
+                    />
+                    <span>{role}</span>
+                  </label>
+                ))}
+
+              {filter === "Status" &&
+                ["Active", "Pending", "Suspended"].map((status) => (
+                  <label
+                    key={status}
+                    className="flex items-center gap-2 mb-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="statusFilter"
+                      value={status.toLowerCase()}
+                      checked={statusFilter === status.toLowerCase()}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setActiveFilter(""); // collapse submenu only
+                      }}
+                      className="form-radio text-blue-600"
+                    />
+                    <span>{status}</span>
+                  </label>
+                ))}
+
+              {filter === "Gender" &&
+                ["Male", "Female"].map((gender) => (
+                  <label
+                    key={gender}
+                    className="flex items-center gap-2 mb-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="genderFilter"
+                      value={gender.toLowerCase()}
+                      checked={genderFilter === gender.toLowerCase()}
+                      onChange={(e) => {
+                        setGenderFilter(e.target.value);
+                        setActiveFilter(""); // collapse submenu only
+                      }}
+                      className="form-radio text-blue-600"
+                    />
+                    <span>{gender}</span>
+                  </label>
+                ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Footer Buttons */}
+      <div className="p-2 border-t border-gray-100 flex gap-2">
+        <button
+          onClick={() => {
+            setRoleFilter("");
+            setStatusFilter("");
+            setGenderFilter("");
+            setActiveFilter("");
+            setShowFilters(false); // close on clear
+          }}
+          className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors duration-200"
+        >
+          Clear
+        </button>
+        <button
+          onClick={() => {
+            setActiveFilter("");
+            setShowFilters(false); // close only when user presses Done
+          }}
+          className="flex-1 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors duration-200"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  )}
+</div>
 
             {/* Search + Export + Add User */}
             <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
